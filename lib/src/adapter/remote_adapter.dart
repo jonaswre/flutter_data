@@ -8,7 +8,7 @@ mixin _RemoteAdapter<T extends DataModelMixin<T>> on _SerializationAdapter<T> {
   ///
   /// For specific paths to this type [T], see [urlForFindAll], [urlForFindOne], etc
   @protected
-  String get baseUrl => 'https://override-base-url-in-adapter';
+  FutureOr<String> get baseUrl => 'https://override-base-url-in-adapter';
 
   /// Returns whether calling [findAll] should trigger a remote call.
   ///
@@ -75,6 +75,8 @@ mixin _RemoteAdapter<T extends DataModelMixin<T>> on _SerializationAdapter<T> {
         return models;
       }
     }
+
+    final baseUrl = await this.baseUrl;
 
     final future = sendRequest<List<T>>(
       baseUrl.asUri / urlForFindAll(params) & params,
@@ -150,6 +152,8 @@ mixin _RemoteAdapter<T extends DataModelMixin<T>> on _SerializationAdapter<T> {
       }
     }
 
+    final baseUrl = await this.baseUrl;
+
     final future = sendRequest(
       baseUrl.asUri / urlForFindOne(id, params) & params,
       method: methodForFindOne(id, params),
@@ -212,9 +216,11 @@ mixin _RemoteAdapter<T extends DataModelMixin<T>> on _SerializationAdapter<T> {
 
     final serialized = await serialize(model);
     final body = json.encode(serialized);
+    final baseUrl = await this.baseUrl;
 
     final uri = baseUrl.asUri / urlForSave(model.id, params) & params;
     final method = methodForSave(model.id, params);
+
 
     final result = await sendRequest<T>(
       uri,
@@ -268,6 +274,8 @@ mixin _RemoteAdapter<T extends DataModelMixin<T>> on _SerializationAdapter<T> {
     if (key != null) {
       deleteLocalByKeys({key});
     }
+
+    final baseUrl = await this.baseUrl;
 
     if (remote == true && id != null) {
       return await sendRequest(
