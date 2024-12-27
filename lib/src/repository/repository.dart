@@ -5,6 +5,8 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
   final Ref _ref;
   Repository(this._ref);
 
+  Ref get ref => _ref;
+  
   var _isInit = false;
 
   String get _internalType => DataHelpers.getInternalType<T>();
