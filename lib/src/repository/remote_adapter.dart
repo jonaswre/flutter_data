@@ -88,7 +88,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   ///
   /// For specific paths to this type [T], see [urlForFindAll], [urlForFindOne], etc
   @protected
-  String get baseUrl => 'https://override-base-url-in-adapter/';
+  FutureOr<String> get baseUrl => 'https://override-base-url-in-adapter/';
 
   /// Returns URL for [findAll]. Defaults to [type].
   @protected
@@ -267,6 +267,8 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
       }
     }
 
+    final baseUrl = await this.baseUrl;
+
     final future = sendRequest<List<T>>(
       baseUrl.asUri / urlForFindAll(params) & params,
       method: methodForFindAll(params),
@@ -333,6 +335,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
         return model;
       }
     }
+    final baseUrl = await this.baseUrl;
 
     final future = sendRequest(
       baseUrl.asUri / urlForFindOne(id, params) & params,
@@ -389,6 +392,8 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     final serialized = await serialize(model);
     final body = json.encode(serialized);
 
+    final baseUrl = await this.baseUrl;
+
     final uri = baseUrl.asUri / urlForSave(model.id, params) & params;
     final method = methodForSave(model.id, params);
 
@@ -442,6 +447,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
       log(label, 'deleted in local storage only');
     }
     await localAdapter.delete(key);
+    final baseUrl = await this.baseUrl;
 
     if (remote == true && id != null) {
       return await sendRequest(
