@@ -108,10 +108,10 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   DataRequestMethod methodForFindOne(id, Map<String, dynamic> params) =>
       DataRequestMethod.GET;
 
-  /// Returns URL for [save]. Defaults to [type]/[id] (if [id] is present).
+  /// Returns URL for [save]. Defaults to [type]/[id] (if model has an id).
   @protected
-  String urlForSave(id, Map<String, dynamic> params) =>
-      id != null ? '$type/$id' : type;
+  String urlForSave(T model, Map<String, dynamic> params) =>
+      model.id != null ? '$type/${model.id}' : type;
 
   /// Returns HTTP method for [save]. Defaults to `PATCH` if [id] is present,
   /// or `POST` otherwise.
@@ -394,7 +394,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
 
     final baseUrl = await this.baseUrl;
 
-    final uri = baseUrl.asUri / urlForSave(model.id, params) & params;
+    final uri = baseUrl.asUri / urlForSave(model, params) & params;
     final method = methodForSave(model.id, params);
 
     final result = await sendRequest<T>(
