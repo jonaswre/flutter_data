@@ -19,7 +19,7 @@ dependencies:
   equatable: ^2.0.2
   glob: ^2.0.1
   hive: ^2.2.3
-  dio: ^5.3.2 
+  dio: ^5.7.0
   inflection3: ^0.5.3+2
   json_annotation: ^4.8.1
   meta: ^1.10.0
