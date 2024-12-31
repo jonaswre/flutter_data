@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_data/flutter_data.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
+import 'package:dio/dio.dart';
+import 'package:http_mock_adapter/http_mock_adapter.dart';
 
 import '../mocks.dart';
 import 'book.dart';
@@ -27,21 +27,25 @@ final logging = [];
 void setUpFn() async {
   container = ProviderContainer(
     overrides: [
-      httpClientProvider.overrideWith((ref) {
-        return MockClient((req) async {
-          // try {
+      dioProvider.overrideWith((ref) {
+        final dio = Dio();
+        final dioAdapter = DioAdapter(dio: dio);
+        dio.httpClientAdapter = dioAdapter;
+        
+        // Setup a dynamic handler for all requests
+        dioAdapter.onAny().reply((request) async {
           final response = ref.watch(responseProvider);
-          final text = await response.callback(req);
-          if (text is String) {
-            return http.Response(text, response.statusCode,
-                headers: response.headers);
-          } else if (text is List<int>) {
-            return http.Response.bytes(text, response.statusCode,
-                headers: response.headers);
-          } else {
-            throw UnsupportedError('text is not of right type');
-          }
+          final result = await response.callback(request.requestOptions);
+          
+          return Response(
+            requestOptions: request.requestOptions,
+            data: result,
+            statusCode: response.statusCode,
+            headers: Headers.fromMap(response.headers),
+          );
         });
+        
+        return dio;
       }),
       hiveProvider.overrideWithValue(HiveFake()),
     ],
@@ -165,7 +169,7 @@ final responseProvider =
     StateProvider<TestResponse>((_) => TestResponse.json(''));
 
 class TestResponse {
-  final Future<Object> Function(http.Request) callback;
+  final Future<Object> Function(RequestOptions) callback;
   final int statusCode;
   final Map<String, String> headers;
 
@@ -176,7 +180,7 @@ class TestResponse {
   });
 
   factory TestResponse.json(String text) =>
-      TestResponse((_) async => utf8.encode(text));
+      TestResponse((_) async => text);
 }
 
 extension ProviderContainerX on ProviderContainer {

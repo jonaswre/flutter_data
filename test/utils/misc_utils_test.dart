@@ -1,5 +1,5 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_data/flutter_data.dart';
-import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
 import '../_support/person.dart';
@@ -36,7 +36,7 @@ void main() async {
     expect(uri.host, 'example.com');
     expect(uri.path, '/namespace/path/sub');
     expect(uri.queryParameters, {'a': '1', 'b[c]': '3'});
-    expect(http.Request('GET', uri).url.toString(),
+    expect(RequestOptions(path: uri.toString()).uri.toString(),
         'http://example.com/namespace/path/sub?a=1&b%5Bc%5D=3');
   });
 

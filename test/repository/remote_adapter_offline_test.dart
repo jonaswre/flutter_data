@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_data/flutter_data.dart';
 import 'package:mockito/mockito.dart';
 import 'package:test/test.dart';
@@ -18,7 +19,10 @@ void main() async {
   test('watchAllNotifier/findAll and findOne', () async {
     // cause network issue
     container.read(responseProvider.notifier).state = TestResponse((_) {
-      throw HandshakeException('Connection terminated during handshake');
+      throw DioException(
+        requestOptions: RequestOptions(path: ''),
+        type: DioExceptionType.connectionError,
+      );
     });
 
     final listener = Listener<DataState<List<BookAuthor>?>?>();
@@ -71,8 +75,12 @@ void main() async {
         Familia(id: '1', surname: 'Smith', residence: residence.asBelongsTo);
 
     // network issue persisting familia
-    container.read(responseProvider.notifier).state =
-        TestResponse((_) => throw SocketException('unreachable'));
+    container.read(responseProvider.notifier).state = TestResponse((_) {
+      throw DioException(
+        requestOptions: RequestOptions(path: ''),
+        type: DioExceptionType.connectionError,
+      );
+    });
 
     await container.familia.save(
       familia,
@@ -148,8 +156,8 @@ void main() async {
     // change the response to: success for familia, failure for familia2
     container.read(responseProvider.notifier).state = TestResponse(
       (req) async {
-        if (req.url.pathSegments.last == '1') {
-          return '{"id": "1", "surname": "${req.headers['X-Override-Name']} ${req.url.queryParameters['overrideSecondName']}"}';
+        if (req.path.split('/').last == '1') {
+          return '{"id": "1", "surname": "${req.headers['X-Override-Name']} ${req.queryParameters['overrideSecondName']}"}';
         }
         throw SocketException('unreachable');
       },
@@ -166,7 +174,7 @@ void main() async {
     // change response to success for both familia and familia2
     container.read(responseProvider.notifier).state = TestResponse(
       (req) async {
-        return '{"id": "${req.url.pathSegments.last}", "surname": "Jones ${req.url.pathSegments.last}"}';
+        return '{"id": "${req.path.split('/').last}", "surname": "Jones ${req.path.split('/').last}"}';
       },
     );
 
@@ -392,7 +400,7 @@ void main() async {
       (req) async {
         // assert headers are included in the retry
         expect(req.headers['X-Sats'], equals('9389173717732'));
-        expect(json.decode(req.body), {'a': 2});
+        expect(json.decode(req.data.toString()), {'a': 2});
         return '[{"id": "19", "surname": "Ko Saved"}]';
       },
     );

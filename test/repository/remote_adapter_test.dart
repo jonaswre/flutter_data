@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
 
 import 'package:flutter_data/flutter_data.dart';
 import 'package:test/test.dart';
@@ -90,13 +91,13 @@ void main() async {
     expect(await adapter.example(), 'http://example.com');
 
     container.read(responseProvider.notifier).state = TestResponse(
-      (req) async => req.headers['response']!,
+      (options) async => options.headers['response']!,
     );
     expect(await adapter.hello(useDefaultHeaders: true),
         'not the message you sent');
 
     container.read(responseProvider.notifier).state = TestResponse(
-      (req) async => '{"url" : "${req.url.toString()}"}',
+      (options) async => '{"url" : "${options.uri.toString()}"}',
     );
     expect(await adapter.url({'a': 1}),
         'https://override-base-url-in-adapter/url?a=1');

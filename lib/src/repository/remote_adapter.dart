@@ -482,7 +482,11 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   /// as by default they are used once and then closed.
   @protected
   @visibleForTesting
-  http.Client get httpClient => http.Client();
+  Dio get httpClient {
+    final dio = Dio();
+    dio.options.validateStatus = (status) => true; // handle response validation ourselves
+    return dio;
+  }
 
   /// The function used to perform an HTTP request and return an [R].
   ///
@@ -535,73 +539,67 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     onSuccess ??= this.onSuccess;
     onError ??= this.onError;
 
-    http.Response? response;
+    Response? response;
     Object? responseBody;
     Object? error;
     StackTrace? stackTrace;
 
-    final client = _isTesting ? ref.read(httpClientProvider)! : httpClient;
+    final client = _isTesting ? ref.read(dioClientProvider)! : httpClient;
 
     log(label,
         'requesting${_logLevel > 1 ? ' [HTTP ${method.toShortString()}] $uri' : ''}');
 
     try {
-      final request = http.Request(method.toShortString(), uri & params);
-      request.headers.addAll(headers);
+      final options = Options(
+        method: method.toShortString(),
+        headers: headers,
+        responseType: returnBytes ? ResponseType.bytes : ResponseType.json,
+      );
 
-      if (body != null) {
-        if (body is String) {
-          request.body = body;
-        } else if (body is List) {
-          request.bodyBytes = body.cast<int>();
-        } else if (body is Map) {
-          request.bodyFields = body.cast<String, String>();
-        } else {
-          throw ArgumentError('Invalid request body "$body".');
-        }
-      }
-
-      final stream = await client.send(request);
-      response = await http.Response.fromStream(stream);
+      response = await client.requestUri(
+        uri & params,
+        data: body,
+        options: options,
+      );
+      
+      responseBody = response.data;
     } catch (err, stack) {
       error = err;
       stackTrace = stack;
     } finally {
-      if (closeClientAfterRequest) {
+      if (closeClientAfterRequest && !_isTesting) {
         client.close();
       }
     }
 
     // response handling
-
     var contentType = '';
 
-    try {
-      if (response != null) {
-        contentType = response.headers['content-type'] ?? 'application/json';
-        if (returnBytes) {
-          responseBody = response.bodyBytes;
-        } else if (response.body.isNotEmpty) {
-          final body = response.body;
-          if (contentType.contains('json')) {
-            responseBody = json.decode(body);
-          } else {
-            responseBody = body;
+    if (response != null) {
+      contentType = response.headers.value('content-type') ?? 'application/json';
+      
+      if (!returnBytes && responseBody != null) {
+        if (responseBody is String && contentType.contains('json')) {
+          try {
+            responseBody = json.decode(responseBody as String);
+          } on FormatException catch (e, stack) {
+            error = e;
+            stackTrace = stack;
           }
         }
       }
-    } on FormatException catch (e, stack) {
-      error = e;
-      stackTrace = stack;
     }
 
     final code = response?.statusCode;
 
     if (error == null && code != null && code >= 200 && code < 400) {
       final data = DataResponse(
-        body: responseBody,
         statusCode: code,
-        headers: {...?response?.headers, 'content-type': contentType},
+        headers: {
+          ...response?.headers.map.map((key, value) => MapEntry(key, value.first)) ?? {},
+          'content-type': contentType
+        },
+        body: responseBody,
       );
       return onSuccess(data, label);
     } else {
@@ -783,17 +781,13 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   @protected
   @visibleForTesting
   bool isOfflineError(Object? error) {
-    final commonExceptions = [
-      // timeouts via http's `connectionTimeout` are also socket exceptions
-      'SocketException',
-      'HttpException',
-      'HandshakeException',
-      'TimeoutException',
-    ];
-
-    // we check exceptions with strings to avoid importing `dart:io`
-    final err = error.runtimeType.toString();
-    return commonExceptions.any(err.contains);
+    if (error is DioError) {
+      return error.type == DioErrorType.connectionTimeout ||
+             error.type == DioErrorType.connectionError ||
+             error.type == DioErrorType.receiveTimeout ||
+             error.type == DioErrorType.sendTimeout;
+    }
+    return false;
   }
 
   @protected
@@ -839,11 +833,11 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   }
 
   bool get _isTesting {
-    return ref.read(httpClientProvider) != null;
+    return ref.read(dioClientProvider) != null;
   }
 }
 
 /// When this provider is non-null it will override
 /// all [_RemoteAdapter.httpClient] overrides;
 /// it is useful for providing a mock client for testing
-final httpClientProvider = Provider<http.Client?>((_) => null);
+final dioClientProvider = Provider<Dio?>((_) => null);
