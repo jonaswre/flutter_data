@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:flutter_data/flutter_data.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_data/flutter_data.dart';
 import 'package:http_mock_adapter/http_mock_adapter.dart';
 
 import '../mocks.dart';
@@ -27,24 +26,44 @@ final logging = [];
 void setUpFn() async {
   container = ProviderContainer(
     overrides: [
-      dioProvider.overrideWith((ref) {
+      dioClientProvider.overrideWith((ref) {
         final dio = Dio();
         final dioAdapter = DioAdapter(dio: dio);
-        dio.httpClientAdapter = dioAdapter;
         
-        // Setup a dynamic handler for all requests
-        dioAdapter.onAny().reply((request) async {
+        // Setup handler for all HTTP methods
+        dioAdapter.onPost('/**', (server) async {
           final response = ref.watch(responseProvider);
-          final result = await response.callback(request.requestOptions);
-          
-          return Response(
-            requestOptions: request.requestOptions,
-            data: result,
-            statusCode: response.statusCode,
-            headers: Headers.fromMap(response.headers),
+          final result = await response.callback(
+            RequestOptions(
+              path: '/**',
+              baseUrl: dio.options.baseUrl,
+              method: 'POST',
+            ),
+          );
+          return server.reply(
+            response.statusCode, 
+            result,
+            headers: response.headers.map((key, value) => MapEntry(key, [value])),
           );
         });
         
+        dioAdapter.onGet('/**', (server) async {
+          final response = ref.watch(responseProvider);
+          final result = await response.callback(
+            RequestOptions(
+              path: '/**',
+              baseUrl: dio.options.baseUrl,
+              method: 'GET',
+            ),
+          );
+          return server.reply(
+            response.statusCode, 
+            result,
+            headers: response.headers.map((key, value) => MapEntry(key, [value])),
+          );
+        });
+
+        dio.httpClientAdapter = dioAdapter;
         return dio;
       }),
       hiveProvider.overrideWithValue(HiveFake()),
