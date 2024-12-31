@@ -108,7 +108,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   DataRequestMethod methodForFindOne(id, Map<String, dynamic> params) =>
       DataRequestMethod.GET;
 
-  /// Returns URL for [save]. Defaults to [type]/[id] (if model has an id).
+  /// Returns URL for [save]. Defaults to [type]/[model] (if model has an id).
   @protected
   String urlForSave(T model, Map<String, dynamic> params) =>
       model.id != null ? '$type/${model.id}' : type;
@@ -476,7 +476,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
 
   // http
 
-  /// An [http.Client] used to make an HTTP request.
+  /// An [Dio] used to make an HTTP request.
   ///
   /// This getter returns a new client every time
   /// as by default they are used once and then closed.
@@ -581,7 +581,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
       if (!returnBytes && responseBody != null) {
         if (responseBody is String && contentType.contains('json')) {
           try {
-            responseBody = json.decode(responseBody as String);
+            responseBody = json.decode(responseBody);
           } on FormatException catch (e, stack) {
             error = e;
             stackTrace = stack;
@@ -781,11 +781,11 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   @protected
   @visibleForTesting
   bool isOfflineError(Object? error) {
-    if (error is DioError) {
-      return error.type == DioErrorType.connectionTimeout ||
-             error.type == DioErrorType.connectionError ||
-             error.type == DioErrorType.receiveTimeout ||
-             error.type == DioErrorType.sendTimeout;
+    if (error is DioException) {
+      return error.type == DioExceptionType.connectionTimeout ||
+             error.type == DioExceptionType.connectionError ||
+             error.type == DioExceptionType.receiveTimeout ||
+             error.type == DioExceptionType.sendTimeout;
     }
     return false;
   }
