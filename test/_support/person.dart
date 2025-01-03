@@ -80,7 +80,7 @@ mixin PersonLoginAdapter on RemoteAdapter<Person> {
   // if email is null it throws some garbage
   Future<String?> login(String? email, String? password) async {
     return await sendRequest(
-      baseUrl.asUri / 'token' & await defaultParams & {'a': 1},
+      (await baseUrl).asUri / 'token' & await defaultParams & {'a': 1},
       onSuccess: (data, _) =>
           (data.body as Map<String, dynamic>?)?['token'] as String?,
       onError: (e, _) => throw UnsupportedError('custom error: $e'),
@@ -90,7 +90,7 @@ mixin PersonLoginAdapter on RemoteAdapter<Person> {
 
   Future<String?> hello({bool useDefaultHeaders = false}) async {
     return await sendRequest(
-      baseUrl.asUri / 'hello' & {'a': 1},
+      (await baseUrl).asUri / 'hello' & {'a': 1},
       headers: useDefaultHeaders ? null : {},
       onSuccess: (data, _) =>
           (data.body as Map<String, dynamic>?)?['message'].toString(),
@@ -99,7 +99,7 @@ mixin PersonLoginAdapter on RemoteAdapter<Person> {
 
   Future<String?> example() async {
     return await sendRequest(
-      baseUrl.asUri / 'example',
+      (await baseUrl).asUri / 'example',
       onSuccess: (data, _) => data.headers['X-Url'],
     );
   }
@@ -107,7 +107,7 @@ mixin PersonLoginAdapter on RemoteAdapter<Person> {
   Future<String?> url(Map<String, dynamic> params,
       {bool useDefaultParams = false}) async {
     return await sendRequest(
-      baseUrl.asUri / 'url' & params,
+      (await baseUrl).asUri / 'url' & params,
       onSuccess: (data, _) =>
           (data.body as Map<String, dynamic>?)?['url'].toString(),
       omitDefaultParams: !useDefaultParams,
