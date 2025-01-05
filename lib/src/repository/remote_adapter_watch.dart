@@ -1,6 +1,114 @@
 part of flutter_data;
 
 mixin _RemoteAdapterWatch<T extends DataModelMixin<T>> on _RemoteAdapter<T> {
+
+  /// Watch offline operations for a specific entity of type [T].
+  ///
+  /// Returns a [DataStateNotifier] that emits updates whenever offline operations
+  /// for the specified entity change.
+  ///
+  /// [key] The key of the entity to watch operations for.
+  @protected
+  DataStateNotifier<Set<OfflineOperation<T>>> watchOfflineOperationNotifier(String key) {
+    final label = DataRequestLabel('watchOfflineOperation', type: internalType, id: key);
+    
+    log(label, 'initializing offline operation watch for key: $key');
+
+    // Filter operations for this specific entity
+    Set<OfflineOperation<T>> getOperationsForKey() {
+      return offlineOperations.where((op) => op.key == key).toSet();
+    }
+
+    final notifier = DataStateNotifier<Set<OfflineOperation<T>>>(
+      data: DataState(getOperationsForKey()),
+    );
+
+    final throttleDuration = ref.read(graphNotifierThrottleDurationProvider);
+    final throttledGraph = graph.throttle(() => throttleDuration);
+
+    final states = <DataState<Set<OfflineOperation<T>>>>[];
+
+    final dispose = throttledGraph.addListener((events) {
+      if (!notifier.mounted) return;
+
+      for (final event in events) {
+        // Listen for changes that might affect this specific entity's operations
+        if ((event.type == DataGraphEventType.addEdge ||
+             event.type == DataGraphEventType.removeEdge) &&
+            (event.keys.contains(_offlineAdapterKey) ||
+             event.keys.any((k) => k.startsWith('_offline:')))) {
+          final operations = getOperationsForKey();
+          if (operations != notifier.data.model) {
+            log(label, 'updated offline operations for key: $key', logLevel: 2);
+            states.add(DataState(
+              operations,
+              isLoading: notifier.data.isLoading,
+              exception: notifier.data.exception,
+              stackTrace: notifier.data.stackTrace,
+            ));
+          }
+        }
+      }
+
+      _updateFromStates(states, notifier);
+    });
+
+    notifier.onDispose = () {
+      log(label, 'disposing');
+      dispose();
+    };
+
+    return notifier;
+  }
+
+  /// Watch all offline operations for this type [T].
+  ///
+  /// Returns a [DataStateNotifier] that emits updates whenever offline operations change.
+  @protected
+  DataStateNotifier<Set<OfflineOperation<T>>> watchOfflineOperationsNotifier() {
+    final label = DataRequestLabel('watchOfflineOperations', type: internalType);
+    
+    log(label, 'initializing offline operations watch');
+
+    final notifier = DataStateNotifier<Set<OfflineOperation<T>>>(
+      data: DataState(offlineOperations),
+    );
+
+    final throttleDuration = ref.read(graphNotifierThrottleDurationProvider);
+    final throttledGraph = graph.throttle(() => throttleDuration);
+
+    final states = <DataState<Set<OfflineOperation<T>>>>[];
+
+    final dispose = throttledGraph.addListener((events) {
+      if (!notifier.mounted) return;
+
+      for (final event in events) {
+        if (event.keys.contains(_offlineAdapterKey) ||
+            (event.type == DataGraphEventType.addEdge &&
+             event.keys.any((k) => k.startsWith('_offline:')))) {
+          final operations = offlineOperations;
+          log(label, 'updated offline operations', logLevel: 2);
+          states.add(DataState(
+            operations,
+            isLoading: notifier.data.isLoading,
+            exception: notifier.data.exception,
+            stackTrace: notifier.data.stackTrace,
+          ));
+        }
+      }
+
+      _updateFromStates(states, notifier);
+    });
+
+    notifier.onDispose = () {
+      log(label, 'disposing');
+      dispose();
+    };
+
+    return notifier;
+  }
+
+
   @protected
   DataStateNotifier<List<T>> watchAllNotifier({
     bool? remote,

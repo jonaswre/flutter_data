@@ -196,6 +196,25 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
 
   // watchers
 
+  /// Watches offline operations for a specific entity of type [T].
+  ///
+  /// Returns a [DataState] that emits updates whenever offline operations
+  /// for the specified entity change.
+  ///
+  /// [key] The key of the entity to watch operations for.
+  DataState<Set<OfflineOperation<T>>> watchOneOfflineOperations(String key) {
+    final provider = watchOneOfflineOperationsProvider(key);
+    return remoteAdapter.internalWatch!(provider);
+  }
+
+  /// Watches all offline operations for this type [T].
+  ///
+  /// Returns a [DataState] that emits updates whenever offline operations change.
+  DataState<Set<OfflineOperation<T>>> watchAllOfflineOperations() {
+    final provider = watchAllOfflineOperationsProvider();
+    return remoteAdapter.internalWatch!(provider);
+  }
+
   /// Watches a provider wrapping [Repository.watchAllNotifier]
   /// which allows the watcher to be notified of changes
   /// on any model of this [type].
@@ -257,6 +276,32 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
   }
 
   // providers
+
+  /// Provider for watching offline operations for a specific entity
+  AutoDisposeStateNotifierProvider<DataStateNotifier<Set<OfflineOperation<T>>>,
+      DataState<Set<OfflineOperation<T>>>> watchOneOfflineOperationsProvider(
+    String key,
+  ) {
+    return _watchOneOfflineOperationsProvider(key);
+  }
+
+  late final _watchOneOfflineOperationsProvider = StateNotifierProvider.autoDispose
+      .family<DataStateNotifier<Set<OfflineOperation<T>>>,
+          DataState<Set<OfflineOperation<T>>>, String>((ref, key) {
+    return remoteAdapter.watchOfflineOperationNotifier(key);
+  });
+
+  /// Provider for watching all offline operations
+  AutoDisposeStateNotifierProvider<DataStateNotifier<Set<OfflineOperation<T>>>,
+      DataState<Set<OfflineOperation<T>>>> watchAllOfflineOperationsProvider() {
+    return _watchAllOfflineOperationsProvider;
+  }
+
+  late final _watchAllOfflineOperationsProvider = StateNotifierProvider.autoDispose<
+      DataStateNotifier<Set<OfflineOperation<T>>>,
+      DataState<Set<OfflineOperation<T>>>>((ref) {
+    return remoteAdapter.watchOfflineOperationsNotifier();
+  });
 
   AutoDisposeStateNotifierProvider<DataStateNotifier<List<T>>,
       DataState<List<T>>> watchAllProvider({
@@ -339,6 +384,18 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
   });
 
   // notifiers
+
+  /// Notifier for watching offline operations for a specific entity
+  DataStateNotifier<Set<OfflineOperation<T>>> watchOneOfflineOperationsNotifier(
+    String key,
+  ) {
+    return remoteAdapter.internalWatch!(watchOneOfflineOperationsProvider(key).notifier);
+  }
+
+  /// Notifier for watching all offline operations
+  DataStateNotifier<Set<OfflineOperation<T>>> watchAllOfflineOperationsNotifier() {
+    return remoteAdapter.internalWatch!(watchAllOfflineOperationsProvider().notifier);
+  }
 
   DataStateNotifier<List<T>> watchAllNotifier(
       {bool? remote,

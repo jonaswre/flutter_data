@@ -190,7 +190,7 @@ final offlineRetryProvider = StreamProvider<void>((ref) async* {
         .toSet();
   }
 
-  final pool = Pool(4, timeout: Duration(seconds: 30));
+  final pool = Pool(1, timeout: Duration(seconds: 30));
 
   var _counter = 0;
 
