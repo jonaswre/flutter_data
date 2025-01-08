@@ -155,11 +155,11 @@ abstract class HiveLocalAdapter<T extends DataModelMixin<T>>
     };
 
     final model = deserialize(map);
-
+    
     // Model initialization is necessary here as `DataModel`s
     // auto-initialization is not ready at this point
     // (reading adapters during FD initialization)
-    initModel(model);
+    initModel(model, keyIfAbsent: map['_key']);
 
     return model;
   }
@@ -167,6 +167,7 @@ abstract class HiveLocalAdapter<T extends DataModelMixin<T>>
   @override
   void write(writer, T obj) {
     final map = serialize(obj, withRelationships: false);
+    map['_key'] = obj._key;
 
     final keys = map.keys;
     writer.writeByte(keys.length);

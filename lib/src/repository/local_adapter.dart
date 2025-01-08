@@ -48,10 +48,10 @@ abstract class LocalAdapter<T extends DataModelMixin<T>> with _Lifecycle {
 
   @protected
   @nonVirtual
-  T initModel(T model, {Function(T)? onModelInitialized}) {
+  T initModel(T model, {Function(T)? onModelInitialized, String? keyIfAbsent}) {
     if (model._key == null) {
       model._key = graph.getKeyForId(internalType, model.id,
-          keyIfAbsent: DataHelpers.generateKey<T>())!;
+          keyIfAbsent: keyIfAbsent ?? DataHelpers.generateKey<T>())!;
       _initializeRelationships(model);
       onModelInitialized?.call(model);
     }
