@@ -155,11 +155,11 @@ abstract class HiveLocalAdapter<T extends DataModelMixin<T>>
     };
 
     final model = deserialize(map);
-    
+
     // Model initialization is necessary here as `DataModel`s
     // auto-initialization is not ready at this point
     // (reading adapters during FD initialization)
-    initModel(model, keyIfAbsent: map['_key']);
+    initModel(model, keyIfAbsent: map.containsKey('_key') ? map['_key'] : null);
 
     return model;
   }
