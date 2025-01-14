@@ -526,6 +526,35 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     DataRequestLabel? label,
     bool closeClientAfterRequest = true,
   }) async {
+    // Check network state
+    final isOnline = ref.read(networkStateProvider);
+    
+    // If offline and not a GET request, create offline operation
+    if (!isOnline && method != DataRequestMethod.GET) {
+      final operation = OfflineOperation<T>(
+        label: label ?? DataRequestLabel('custom', type: internalType),
+        httpRequest: '${method.toShortString()} $uri',
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        headers: headers,
+        body: body?.toString(),
+        onSuccess: onSuccess as _OnSuccessGeneric<T>?,
+        onError: onError as _OnErrorGeneric<T>?,
+        adapter: this as RemoteAdapter<T>,
+      );
+      operation.add();
+
+      // Return early for non-GET requests when offline
+      switch (label?.kind) {
+        case 'findAll':
+          return findAll(remote: false) as Future<R?>;
+        case 'findOne':
+        case 'save':
+          return label?.model as R?;
+        default:
+          return null;
+      }
+    }
+
     // defaults
     headers ??= await defaultHeaders;
     final params =
