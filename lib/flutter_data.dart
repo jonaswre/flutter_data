@@ -1,13 +1,13 @@
 library flutter_data;
 
-// import external packages
+// import dart packages
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+// import external packages
 import 'package:collection/collection.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
@@ -21,16 +21,16 @@ import 'package:uuid/uuid.dart';
 
 // import internal packages
 import 'src/graph/notifier_extension.dart';
-import 'src/repository/hive_local_storage.dart';
 import 'src/providers/network_state_provider.dart';
+import 'src/repository/hive_local_storage.dart';
 
 // export external packages
 export 'package:riverpod/riverpod.dart' hide Family;
 
 // export internal packages
 export 'src/graph/notifier_extension.dart';
-export 'src/repository/hive_local_storage.dart';
 export 'src/providers/network_state_provider.dart' show networkStateProvider;
+export 'src/repository/hive_local_storage.dart';
 
 part 'src/graph/graph_notifier.dart';
 part 'src/model/data_model.dart';

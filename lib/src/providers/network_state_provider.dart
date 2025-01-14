@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod/riverpod.dart';
-import 'package:state_notifier/state_notifier.dart';
 
 /// Manages network connectivity state
 class NetworkStateNotifier extends StateNotifier<bool> {
   final Connectivity _connectivity;
-  StreamSubscription<List<ConnectivityResult>>? _subscription;
+  StreamSubscription<ConnectivityResult>? _subscription;
   
   NetworkStateNotifier() : _connectivity = Connectivity(), super(true) {
     _initConnectivity();
@@ -14,8 +13,8 @@ class NetworkStateNotifier extends StateNotifier<bool> {
 
   void _initConnectivity() {
     checkConnectivity();
-    _subscription = _connectivity.onConnectivityChanged.listen((results) {
-      state = results.any((result) => result != ConnectivityResult.none);
+    _subscription = _connectivity.onConnectivityChanged.listen((result) {
+      state = result != ConnectivityResult.none;
     });
   }
 
