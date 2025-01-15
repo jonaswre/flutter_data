@@ -212,7 +212,7 @@ extension LibraryRelationshipGraphNodeX on RelationshipGraphNode<Library> {
 
 _$BookAuthorImpl _$$BookAuthorImplFromJson(Map<String, dynamic> json) =>
     _$BookAuthorImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       name: json['name'] as String?,
       books: HasMany<Book>.fromJson(json['books'] as Map<String, dynamic>),
     );
@@ -225,9 +225,9 @@ Map<String, dynamic> _$$BookAuthorImplToJson(_$BookAuthorImpl instance) =>
     };
 
 _$BookImpl _$$BookImplFromJson(Map<String, dynamic> json) => _$BookImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       title: json['title'] as String?,
-      numberOfSales: json['number_of_sales'] as int? ?? 0,
+      numberOfSales: (json['number_of_sales'] as num?)?.toInt() ?? 0,
       originalAuthor: json['original_author_id'] == null
           ? null
           : BelongsTo<BookAuthor>.fromJson(
@@ -239,28 +239,20 @@ _$BookImpl _$$BookImplFromJson(Map<String, dynamic> json) => _$BookImpl(
           json['ardent_supporters'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$$BookImplToJson(_$BookImpl instance) {
-  final val = <String, dynamic>{
-    'id': instance.id,
-  };
-
-  void writeNotNull(String key, dynamic value) {
-    if (value != null) {
-      val[key] = value;
-    }
-  }
-
-  writeNotNull('title', instance.title);
-  val['number_of_sales'] = instance.numberOfSales;
-  writeNotNull('original_author_id', instance.originalAuthor);
-  writeNotNull('house', instance.house);
-  val['ardent_supporters'] = instance.ardentSupporters;
-  return val;
-}
+Map<String, dynamic> _$$BookImplToJson(_$BookImpl instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      if (instance.title case final value?) 'title': value,
+      'number_of_sales': instance.numberOfSales,
+      if (instance.originalAuthor case final value?)
+        'original_author_id': value,
+      if (instance.house case final value?) 'house': value,
+      'ardent_supporters': instance.ardentSupporters,
+    };
 
 _$LibraryImpl _$$LibraryImplFromJson(Map<String, dynamic> json) =>
     _$LibraryImpl(
-      id: json['id'] as int,
+      id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       books: HasMany<Book>.fromJson(json['books'] as Map<String, dynamic>),
     );

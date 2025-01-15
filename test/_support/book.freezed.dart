@@ -24,8 +24,12 @@ mixin _$BookAuthor {
   String? get name => throw _privateConstructorUsedError;
   HasMany<Book> get books => throw _privateConstructorUsedError;
 
+  /// Serializes this BookAuthor to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of BookAuthor
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $BookAuthorCopyWith<BookAuthor> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -49,6 +53,8 @@ class _$BookAuthorCopyWithImpl<$Res, $Val extends BookAuthor>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of BookAuthor
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -92,6 +98,8 @@ class __$$BookAuthorImplCopyWithImpl<$Res>
       _$BookAuthorImpl _value, $Res Function(_$BookAuthorImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of BookAuthor
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -147,11 +155,13 @@ class _$BookAuthorImpl extends _BookAuthor {
             (identical(other.books, books) || other.books == books));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, books);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of BookAuthor
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$BookAuthorImplCopyWith<_$BookAuthorImpl> get copyWith =>
@@ -181,8 +191,11 @@ abstract class _BookAuthor extends BookAuthor {
   String? get name;
   @override
   HasMany<Book> get books;
+
+  /// Create a copy of BookAuthor
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$BookAuthorImplCopyWith<_$BookAuthorImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -202,8 +215,12 @@ mixin _$Book {
   BelongsTo<House>? get house => throw _privateConstructorUsedError;
   HasMany<Person> get ardentSupporters => throw _privateConstructorUsedError;
 
+  /// Serializes this Book to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Book
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $BookCopyWith<Book> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -232,6 +249,8 @@ class _$BookCopyWithImpl<$Res, $Val extends Book>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Book
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -295,6 +314,8 @@ class __$$BookImplCopyWithImpl<$Res>
   __$$BookImplCopyWithImpl(_$BookImpl _value, $Res Function(_$BookImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Book
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -386,12 +407,14 @@ class _$BookImpl extends _Book {
                 other.ardentSupporters == ardentSupporters));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, title, numberOfSales,
       originalAuthor, house, ardentSupporters);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Book
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$BookImplCopyWith<_$BookImpl> get copyWith =>
@@ -431,8 +454,11 @@ abstract class _Book extends Book {
   BelongsTo<House>? get house;
   @override
   HasMany<Person> get ardentSupporters;
+
+  /// Create a copy of Book
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$BookImplCopyWith<_$BookImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -447,8 +473,12 @@ mixin _$Library {
   String get name => throw _privateConstructorUsedError;
   HasMany<Book> get books => throw _privateConstructorUsedError;
 
+  /// Serializes this Library to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of Library
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $LibraryCopyWith<Library> get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -470,6 +500,8 @@ class _$LibraryCopyWithImpl<$Res, $Val extends Library>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of Library
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -512,6 +544,8 @@ class __$$LibraryImplCopyWithImpl<$Res>
       _$LibraryImpl _value, $Res Function(_$LibraryImpl) _then)
       : super(_value, _then);
 
+  /// Create a copy of Library
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -567,11 +601,13 @@ class _$LibraryImpl extends _Library {
             (identical(other.books, books) || other.books == books));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(runtimeType, id, name, books);
 
-  @JsonKey(ignore: true)
+  /// Create a copy of Library
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$LibraryImplCopyWith<_$LibraryImpl> get copyWith =>
@@ -600,8 +636,11 @@ abstract class _Library extends Library {
   String get name;
   @override
   HasMany<Book> get books;
+
+  /// Create a copy of Library
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$LibraryImplCopyWith<_$LibraryImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

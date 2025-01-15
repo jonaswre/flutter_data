@@ -1,41 +1,22 @@
-import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:riverpod/riverpod.dart';
 
-/// Manages network connectivity state
-class NetworkStateNotifier extends StateNotifier<bool> {
-  final Connectivity _connectivity;
-  StreamSubscription<ConnectivityResult>? _subscription;
-  
-  NetworkStateNotifier() : _connectivity = Connectivity(), super(true) {
-    _initConnectivity();
-  }
-
-  void _initConnectivity() {
-    checkConnectivity();
-    _subscription = _connectivity.onConnectivityChanged.listen((result) {
-      state = result != ConnectivityResult.none;
-    });
-  }
-
-  Future<void> checkConnectivity() async {
-    try {
-      final result = await _connectivity.checkConnectivity();
-      state = result != ConnectivityResult.none;
-    } catch (_) {
-      state = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
-}
-
 /// Provider that exposes the current network state.
-/// Returns true when online, false when offline.
-final networkStateProvider = StateNotifierProvider<NetworkStateNotifier, bool>((ref) {
-  return NetworkStateNotifier();
+/// Can be overridden by users to provide their own network state implementation.
+final networkStateProvider = Provider<bool>((ref) {
+  // Default to online
+  return true;
 });
+
+/// Example of how to override the network state provider:
+/// ```dart
+/// runApp(
+///   ProviderScope(
+///     overrides: [
+///       networkStateProvider.overrideWith((ref) {
+///         // Implement your own network state logic here
+///         return myNetworkState;
+///       }),
+///     ],
+///     child: MyApp(),
+///   ),
+/// );
