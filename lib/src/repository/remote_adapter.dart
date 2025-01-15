@@ -542,7 +542,20 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
         adapter: this as RemoteAdapter<T>,
       );
       operation.add();
-
+  
+      // Call error handler to set isLoading to false
+      // wrap error in an OfflineException
+      final offlineException = OfflineException(error: 'Network state is offline');
+  
+      // call error handler but do not return it
+      // (this gives the user the chance to present
+      // a UI element to retry fetching, for example)
+      if (onError != null) {
+        await onError(offlineException, operation.label);
+      } else {
+        await this.onError<R>(offlineException, operation.label);
+      }
+  
       // Return early for non-GET requests when offline
       switch (label?.kind) {
         case 'findAll':
