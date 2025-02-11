@@ -138,6 +138,54 @@ class OfflineOperation<T extends DataModelMixin<T>> with EquatableMixin {
 
   @override
   bool get stringify => true;
+
+  /// Compacts multiple operations for this entity
+  void compact() {
+    // Get existing operations for this entity
+    final operations = adapter.offlineOperations.where((op) => op.key == key).toList();
+    if (operations.isEmpty) return;
+
+    // Group operations by type
+    final saves = operations.where((op) =>
+      op.method == DataRequestMethod.POST || op.method == DataRequestMethod.PATCH
+    ).toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    final deletes = operations.where((op) =>
+      op.method == DataRequestMethod.DELETE
+    ).toList()..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    // Remove all existing operations
+    for (final op in operations) {
+      OfflineOperation.remove(op.label, adapter);
+    }
+
+    // Add back the compacted operation
+    if (deletes.isNotEmpty) {
+      // If there's a delete, use the latest delete operation
+      deletes.first.add();
+    } else if (saves.isNotEmpty) {
+      // For saves, use latest state
+      final latest = saves.first;
+      
+      // If any operation was a POST, make the compacted operation a POST
+      final hasPost = saves.any((op) => op.method == DataRequestMethod.POST);
+      if (hasPost) {
+        OfflineOperation<T>(
+          label: latest.label,
+          httpRequest: '${DataRequestMethod.POST.toShortString()} ${latest.uri}',
+          timestamp: latest.timestamp,
+          headers: latest.headers,
+          body: latest.body,
+          key: latest.key,
+          onSuccess: latest.onSuccess,
+          onError: latest.onError,
+          adapter: latest.adapter,
+        ).add();
+      } else {
+        latest.add();
+      }
+    }
+  }
 }
 
 extension OfflineOperationsX on Set<OfflineOperation<DataModelMixin>> {

@@ -25,11 +25,12 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
   /// In standard scenarios this initialization is done by the framework.
   @mustCallSuper
   FutureOr<Repository<T>> initialize(
-      {bool? remote, required Map<String, RemoteAdapter> adapters}) async {
+      {bool? remote, bool? compactOffline, required Map<String, RemoteAdapter> adapters}) async {
     if (isInitialized) return this;
     _adapters.addAll(adapters);
     await remoteAdapter.initialize(
       remote: remote,
+      compactOffline: compactOffline,
       adapters: adapters,
       ref: _ref,
     );
@@ -135,6 +136,7 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
   Future<T> save(
     T model, {
     bool? remote,
+    bool? compactOffline,
     Map<String, dynamic>? params,
     Map<String, String>? headers,
     OnSuccessOne<T>? onSuccess,
@@ -144,6 +146,7 @@ class Repository<T extends DataModelMixin<T>> with _Lifecycle {
     return remoteAdapter.save(
       model,
       remote: remote,
+      compactOffline: compactOffline,
       params: params,
       headers: headers,
       onSuccess: onSuccess,
@@ -478,6 +481,7 @@ class DataRepository {
   final List<Type> adapters;
   final List<Type> localAdapters;
   final bool remote;
+  final bool compactOffline;
   final String? internalType;
   final int? typeId;
   final String? fromJson;
@@ -486,6 +490,7 @@ class DataRepository {
     this.adapters, {
     this.localAdapters = const [],
     this.remote = true,
+    this.compactOffline = false,
     this.internalType,
     this.typeId,
     this.fromJson,

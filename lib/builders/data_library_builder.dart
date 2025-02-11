@@ -40,6 +40,7 @@ class DataExtensionIntermediateBuilder implements Builder {
                   : member.annotation.read('internalType').stringValue,
               member.element.location!.components.first,
               member.annotation.read('remote').boolValue,
+              member.annotation.read('compactOffline').boolValue,
             ].join('#');
           }).join(';'));
     }
@@ -72,6 +73,7 @@ class DataExtensionBuilder implements Builder {
           'type': parts[1],
           'path': parts[2],
           'remote': parts[3],
+          'compactOffline': parts[4],
         });
       }
       return acc;
@@ -96,6 +98,10 @@ class DataExtensionBuilder implements Builder {
 
     final remotesMap = {
       for (final clazz in classes) '\'${clazz['type']}\'': clazz['remote']
+    };
+
+    final compactOfflinesMap = {
+      for (final clazz in classes) '\'${clazz['type']}\'': clazz['compactOffline']
     };
 
     // imports
@@ -181,6 +187,7 @@ final repositoryInitializerProvider =
 ${classes.map((clazz) => '    DataHelpers.setInternalType<${clazz['className']}>(\'${clazz['type']}\');').join('\n')}
     final adapters = <String, RemoteAdapter>$adaptersMap;
     final remotes = <String, bool>$remotesMap;
+    final compactOfflines = <String, bool>$compactOfflinesMap;
 
     await ref.watch(graphNotifierProvider).initialize();
 
@@ -190,6 +197,7 @@ ${classes.map((clazz) => '    DataHelpers.setInternalType<${clazz['className']}>
       repository.dispose();
       await repository.initialize(
         remote: remotes[type],
+        compactOffline: compactOfflines[type],
         adapters: adapters,
       );
       internalRepositories[type] = repository;

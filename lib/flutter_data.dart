@@ -3,6 +3,7 @@ library flutter_data;
 // import dart packages
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 import 'dart:math' as math;
 import 'dart:typed_data';
 

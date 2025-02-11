@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_data/flutter_data.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../mocks.dart';
 import 'book.dart';
@@ -24,6 +25,17 @@ Function? dispose;
 
 final logging = [];
 
+// Add network state provider
+class NetworkStateNotifier extends StateNotifier<bool> {
+  NetworkStateNotifier() : super(true);
+  void setOffline() => state = false;
+  void setOnline() => state = true;
+}
+
+final networkStateNotifier = StateNotifierProvider<NetworkStateNotifier, bool>(
+  (ref) => NetworkStateNotifier(),
+);
+
 void setUpFn() async {
   container = ProviderContainer(
     overrides: [
@@ -44,6 +56,8 @@ void setUpFn() async {
         });
       }),
       hiveProvider.overrideWithValue(HiveFake()),
+      // Override network state provider to use our controllable version
+      networkStateProvider.overrideWith((ref) => ref.watch(networkStateNotifier)),
     ],
   );
 

@@ -48,6 +48,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   // None of these fields below can be late finals as they might be re-initialized
   Map<String, RemoteAdapter>? _adapters;
   bool? _remote;
+  bool? _compactOffline;
   Ref? _ref;
 
   /// All adapters for the relationship subgraph of [T] and their relationships.
@@ -172,6 +173,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   @nonVirtual
   Future<RemoteAdapter<T>> initialize(
       {bool? remote,
+      bool? compactOffline,
       required Map<String, RemoteAdapter> adapters,
       required Ref ref}) async {
     if (isInitialized) return this as RemoteAdapter<T>;
@@ -179,6 +181,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     // initialize attributes
     _adapters = adapters;
     _remote = remote ?? true;
+    _compactOffline = compactOffline ?? false;
     _ref = ref;
 
     await localAdapter.initialize();
@@ -364,6 +367,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
   Future<T> save(
     T model, {
     bool? remote,
+    bool? compactOffline,
     Map<String, dynamic>? params,
     Map<String, String>? headers,
     OnSuccessOne<T>? onSuccess,
@@ -371,6 +375,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     DataRequestLabel? label,
   }) async {
     remote ??= _remote;
+    compactOffline ??= _compactOffline ?? false;
 
     params = await defaultParams & params;
     headers = await defaultHeaders & headers;
@@ -403,6 +408,7 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
       headers: headers,
       body: body,
       label: label,
+      compactOffline: compactOffline,
       onSuccess: (data, label) {
         onSuccess ??= (data, label, _) => this.onSuccess<T>(data, label);
         return onSuccess!.call(data, label, this as RemoteAdapter<T>);
@@ -525,49 +531,8 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
     bool returnBytes = false,
     DataRequestLabel? label,
     bool closeClientAfterRequest = true,
+    bool compactOffline = false,
   }) async {
-    // Check network state
-    final isOnline = ref.read(networkStateProvider);
-    
-    // If offline and not a GET request, create offline operation
-    if (!isOnline && method != DataRequestMethod.GET) {
-      final operation = OfflineOperation<T>(
-        label: label ?? DataRequestLabel('custom', type: internalType),
-        httpRequest: '${method.toShortString()} $uri',
-        timestamp: DateTime.now().millisecondsSinceEpoch,
-        headers: headers,
-        body: body?.toString(),
-        onSuccess: onSuccess as _OnSuccessGeneric<T>?,
-        onError: onError as _OnErrorGeneric<T>?,
-        adapter: this as RemoteAdapter<T>,
-      );
-      operation.add();
-  
-      // Call error handler to set isLoading to false
-      // wrap error in an OfflineException
-      final offlineException = OfflineException(error: 'Network state is offline');
-  
-      // call error handler but do not return it
-      // (this gives the user the chance to present
-      // a UI element to retry fetching, for example)
-      if (onError != null) {
-        await onError(offlineException, operation.label);
-      } else {
-        await this.onError<R>(offlineException, operation.label);
-      }
-  
-      // Return early for non-GET requests when offline
-      switch (label?.kind) {
-        case 'findAll':
-          return findAll(remote: false) as Future<R?>;
-        case 'findOne':
-        case 'save':
-          return label?.model as R?;
-        default:
-          return null;
-      }
-    }
-
     // defaults
     headers ??= await defaultHeaders;
     final params =
@@ -588,6 +553,12 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
         'requesting${_logLevel > 1 ? ' [HTTP ${method.toShortString()}] $uri' : ''}');
 
     try {
+      // Check network state first
+      final isOnline = ref.read(networkStateProvider);
+      if (!isOnline) {
+        throw SocketException('unreachable');
+      }
+
       final request = http.Request(method.toShortString(), uri & params);
       request.headers.addAll(headers);
 
@@ -654,10 +625,10 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
         if (method != DataRequestMethod.GET) {
           OfflineOperation<T>(
             httpRequest: '${method.toShortString()} $uri',
-            label: label,
+          label: label,
             timestamp: DateTime.now().millisecondsSinceEpoch,
             body: body?.toString(),
-            headers: headers,
+          headers: headers,
             onSuccess: onSuccess as _OnSuccessGeneric<T>,
             onError: onError as _OnErrorGeneric<T>,
             adapter: this as RemoteAdapter<T>,

@@ -424,6 +424,74 @@ void main() async {
     expect(o1, equals(o2));
   });
 
+  test('early offline detection - GET request', () async {
+    // set network state to offline
+    container.read(networkStateNotifier.notifier).setOffline();
+
+    final listener = Listener<DataState<List<BookAuthor>?>?>();
+    final notifier = container.bookAuthors.watchAllNotifier(remote: true);
+    dispose = notifier.addListener(listener);
+
+    await oneMs();
+
+    // try findOne while offline
+    await container.bookAuthors.findOne(19, remote: true);
+
+    // verify onError captures the `OfflineException`
+    verify(listener(argThat(
+      isA<DataState>()
+          .having((s) => s.exception!.toString(), 'exception',
+              startsWith('OfflineException:'))
+          .having((s) => s.isLoading, 'isLoading', false),
+    ))).called(1);
+
+    // assert there are no queued operations for findOne
+    // because it is a GET operation
+    expect(
+        container.bookAuthors.offlineOperations
+            .only(DataRequestLabel('findOne', type: 'bookAuthors')),
+        isEmpty);
+  });
+
+  test('early offline detection - POST request', () async {
+    // set network state to offline
+    container.read(networkStateNotifier.notifier).setOffline();
+
+    final listener = Listener<DataState<List<Familia>?>?>();
+    final notifier = container.familia.watchAllNotifier(remote: false);
+    dispose = notifier.addListener(listener);
+
+    final familia = Familia(id: '1', surname: 'Smith');
+
+    // try to save while offline
+    await container.familia.save(
+      familia,
+      remote: true,
+      onError: (e, _, __) async {
+        await oneMs();
+        notifier.updateWith(exception: e);
+        return null;
+      },
+    );
+
+    await oneMs();
+
+    // verify onError captures the `OfflineException` and sets isLoading to false
+    verify(listener(argThat(
+      isA<DataState>()
+          .having((s) => s.exception, 'exception', isA<OfflineException>())
+          .having((s) => s.isLoading, 'isLoading', false),
+    ))).called(1);
+
+    // verify operation is queued
+    expect(
+        container.familia.offlineOperations
+            .only(DataRequestLabel('save', type: 'familia'))
+            .map((o) => o.label.id)
+            .toList(),
+        [familia.id]);
+  });
+
   test('findOne scenario issue #118', () async {
     // cause network issue
     container.read(responseProvider.notifier).state = TestResponse((_) {
