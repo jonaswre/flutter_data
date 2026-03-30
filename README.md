@@ -5,7 +5,7 @@
 
 <h1 align="center" style="margin-top: 0px; font-size: 4em;">Flutter Data</h1>
 
-[![tests](https://img.shields.io/github/actions/workflow/status/flutterdata/flutter_data/test.yml?branch=master)](https://github.com/flutterdata/flutter_data/actions) [![codecov](https://codecov.io/gh/flutterdata/flutter_data/branch/master/graph/badge.svg)](https://codecov.io/gh/flutterdata/flutter_data) [![pub.dev](https://img.shields.io/pub/v/flutter_data?label=pub.dev&labelColor=333940&logo=dart)](https://pub.dev/packages/flutter_data) [![license](https://img.shields.io/github/license/flutterdata/flutter_data?color=%23007A88&labelColor=333940&logo=mit)](https://github.com/flutterdata/flutter_data/blob/master/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/jonaswre/flutter_data/test.yml?branch=master)](https://github.com/jonaswre/flutter_data/actions) [![codecov](https://codecov.io/gh/jonaswre/flutter_data/branch/master/graph/badge.svg)](https://codecov.io/gh/jonaswre/flutter_data) [![license](https://img.shields.io/github/license/jonaswre/flutter_data?color=%23007A88&labelColor=333940&logo=mit)](https://github.com/jonaswre/flutter_data/blob/master/LICENSE)
 
 ## Persistent reactive models in Flutter with zero boilerplate
 
