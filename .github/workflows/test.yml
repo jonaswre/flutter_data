@@ -1,47 +1,81 @@
-name: test
+name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main, master]
   pull_request:
-    branches: [master]
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Get dependencies
+        run: dart pub get
+
+      - name: Check formatting
+        run: dart format --set-exit-if-changed .
+
+      - name: Analyze code
+        run: dart analyze --fatal-infos
+
+  test:
+    name: Test (${{ matrix.platform }})
     strategy:
       fail-fast: false
       matrix:
         platform:
           - linux
-          - windows
           - macos
-          - web
         include:
           - platform: linux
             os: ubuntu-latest
-          - platform: windows
-            os: windows-latest
           - platform: macos
             os: macos-latest
-            sdk: stable
-          - platform: web
-            os: ubuntu-latest
-            dartTestArgs: -p chrome
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: dart-lang/setup-dart@v1.5
-      - uses: actions/checkout@v2
-      - name: Install dependencies
+      - uses: actions/checkout@v4
+
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install SQLite (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - name: Get dependencies
         run: dart pub get
+
       - name: Run tests
         run: dart test
+
       - name: Generate coverage
         if: runner.os == 'macOS'
-        run: dart run coverage:test_with_coverage
+        run: dart run test --coverage=coverage
+
+      - name: Convert to lcov
+        if: runner.os == 'macOS'
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:format_coverage --in="./coverage/test" --out="./coverage/lcov.info" --lcov --report-on="./lib"
+
       - name: Send coverage report to codecov
         if: runner.os == 'macOS'
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
+          files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
