@@ -25,3 +25,7 @@ download/
 
 .vscode/launch.json
 example/.vscode/launch.json
+
+# Library lock files (per https://dart.dev/guides/libraries/private-files#pubspeclock)
+pubspec.lock
+example/pubspec.lock
