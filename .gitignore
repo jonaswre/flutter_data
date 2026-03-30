@@ -1,3 +1,6 @@
+# Local settings
+*.local.json
+
 tmp/*
 example/tmp
 
