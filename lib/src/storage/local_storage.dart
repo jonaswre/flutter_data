@@ -4,7 +4,7 @@ class LocalStorage {
   LocalStorage({
     required this.baseDirFn,
     this.clear = LocalStorageClearStrategy.whenError,
-    this.busyTimeout = 5000,
+    this.busyTimeout = 30000,
   });
 
   var isInitialized = false;
