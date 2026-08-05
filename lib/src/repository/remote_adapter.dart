@@ -623,16 +623,26 @@ abstract class _RemoteAdapter<T extends DataModelMixin<T>> with _Lifecycle {
         //  - this is a network error and we're offline
         //  - the request was not a find
         if (method != DataRequestMethod.GET) {
-          OfflineOperation<T>(
+          final operation = OfflineOperation<T>(
             httpRequest: '${method.toShortString()} $uri',
-          label: label,
+            label: label,
             timestamp: DateTime.now().millisecondsSinceEpoch,
             body: body?.toString(),
-          headers: headers,
+            headers: headers,
             onSuccess: onSuccess as _OnSuccessGeneric<T>,
             onError: onError as _OnErrorGeneric<T>,
             adapter: this as RemoteAdapter<T>,
-          ).add();
+          );
+          operation.add();
+
+          // Drop earlier queued writes this one supersedes. Without this the
+          // `compactOffline` flag — settable per model via `@DataRepository`
+          // and threaded all the way down to here — was accepted and then
+          // silently ignored, so repeated offline saves of the same record
+          // each replayed against the backend.
+          if (compactOffline) {
+            operation.compact();
+          }
         }
 
         // wrap error in an OfflineException

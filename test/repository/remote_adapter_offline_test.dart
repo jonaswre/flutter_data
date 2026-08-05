@@ -404,6 +404,111 @@ void main() async {
     expect(container.familia.offlineOperations, isEmpty);
   });
 
+  test('compactOffline collapses superseded saves of the same record',
+      () async {
+    container.read(responseProvider.notifier).state =
+        TestResponse((_) => throw SocketException('unreachable'));
+
+    // No id, so every save serializes as a create.
+    final familia = Familia(surname: 'Smith');
+    await container.familia.save(familia, remote: true, compactOffline: true);
+    await oneMs();
+
+    expect(container.familia.offlineOperations, hasLength(1));
+
+    // Edited again before the queue drained. Same key, so this create
+    // supersedes the first rather than adding a second record.
+    await container.familia.save(
+      Familia(surname: 'Smith Jones').withKeyOf(familia),
+      remote: true,
+      compactOffline: true,
+    );
+    await oneMs();
+
+    final operations = container.familia.offlineOperations;
+    expect(
+      operations,
+      hasLength(1),
+      reason: 'replaying both creates would persist the record twice',
+    );
+    expect(operations.single.body, contains('Smith Jones'));
+  });
+
+  test('without compactOffline both saves stay queued', () async {
+    container.read(responseProvider.notifier).state =
+        TestResponse((_) => throw SocketException('unreachable'));
+
+    final familia = Familia(surname: 'Smith');
+    await container.familia.save(familia, remote: true);
+    await oneMs();
+
+    await container.familia
+        .save(Familia(surname: 'Smith Jones').withKeyOf(familia), remote: true);
+    await oneMs();
+
+    expect(container.familia.offlineOperations, hasLength(2));
+  });
+
+  test('compact never collapses operations that have no key', () async {
+    Familia(id: '1', surname: 'Smith').saveLocal();
+    Familia(id: '2', surname: 'Jones').saveLocal();
+    await oneMs();
+
+    container.read(responseProvider.notifier).state =
+        TestResponse((_) => throw SocketException('unreachable'));
+
+    // Delete labels carry an id but no model, so every delete operation has a
+    // null key. Grouping by key would fold unrelated deletes into one.
+    await container.familia.delete('1', remote: true);
+    await container.familia.delete('2', remote: true);
+    await oneMs();
+
+    final deletes = container.familia.offlineOperations
+        .only(DataRequestLabel('delete', type: 'familia'));
+    expect(deletes, hasLength(2));
+
+    for (final operation in [...container.familia.offlineOperations]) {
+      operation.compact();
+    }
+
+    expect(
+      container.familia.offlineOperations
+          .only(DataRequestLabel('delete', type: 'familia'))
+          .map((o) => o.label.id),
+      unorderedEquals(['1', '2']),
+    );
+  });
+
+  test('compact preserves the callbacks of the surviving operation', () async {
+    container.read(responseProvider.notifier).state =
+        TestResponse((_) => throw SocketException('unreachable'));
+
+    var errorCallbackRan = false;
+
+    final familia = Familia(surname: 'Smith');
+    await container.familia.save(familia, remote: true, compactOffline: true);
+    await oneMs();
+
+    await container.familia.save(
+      Familia(surname: 'Smith Jones').withKeyOf(familia),
+      remote: true,
+      compactOffline: true,
+      onError: (e, _, __) async {
+        errorCallbackRan = true;
+        return null;
+      },
+    );
+    await oneMs();
+
+    // Operations rebuilt from storage carry no callbacks, so compaction must
+    // keep the live instance rather than a reconstructed one.
+    errorCallbackRan = false;
+    await container.familia.offlineOperations.single.retry();
+    await oneMs();
+
+    expect(errorCallbackRan, isTrue);
+  });
+
   test('operation equality', () {
     final o1 = OfflineOperation<Familia>(
       label: DataRequestLabel('findAll', type: 'familia', requestId: 'test'),
